@@ -20,21 +20,21 @@ function drawColorPalette(hue) {
 
     // Horizontal Gradient (Saturation)
     const satGradient = ctx.createLinearGradient(0, 0, width, 0);
-    satGradient.addColorStop(0, `hsl(${hue}, 0%, 50%)`);
-    satGradient.addColorStop(1, `hsl(${hue}, 100%, 50%)`);
+    satGradient.addColorStop(0.001, `hsl(${hue}, 0%, 100%)`);
+    satGradient.addColorStop(0.999, `hsl(${hue}, 100%, 50%)`);
     ctx.fillStyle = satGradient;
     ctx.fillRect(0, 0, width, height);
     
-    // Vertical Gradient (Saturation)
+    // Vertical Gradient (Brightness)
     const brightnessGrad = ctx.createLinearGradient(0, 0, 0, height);
     brightnessGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
-    brightnessGrad.addColorStop(1, `rgba(0, 0, 0, 1)`);
+    brightnessGrad.addColorStop(0.999, `rgba(0, 0, 0, 1)`);
     ctx.fillStyle = brightnessGrad;
     ctx.fillRect(0, 0, width, height);
 }
 
 function extractColor() {
-    const { x, y } = colorSliderPos;
+    const x = floor(colorSliderPos.x), y = floor(colorSliderPos.y);
     const pixel = ctx.getImageData(x, y, 1, 1).data;
     result.r = pixel[0];
     result.g = pixel[1];
@@ -95,8 +95,8 @@ function toPixels(value) {
 }
 
 function clamp2D(x, y, dx, dy, dw, dh) {
-    x = Math.max(dx, Math.min(x, dx + dw - 1));
-    y = Math.max(dy, Math.min(y, dy + dh - 1));
+    x = Math.max(dx, Math.min(x, dx + dw));
+    y = Math.max(dy, Math.min(y, dy + dh));
     return {x, y};
 }
 
@@ -125,6 +125,8 @@ function setColorSliderPos(x, y) {
 }
 function setHueSliderPos(x) {
     hueSlider.style.left = toPixels(x);
+    const hue = Math.floor(x / hueCanvasMetrics.width * 360);
+    drawColorPalette(hue);
 }
 function setAlphaSliderPos(y) {
     alphaSlider.style.top = toPixels(y);
@@ -163,7 +165,7 @@ window.addEventListener('mousemove', e => {
             const pos = clamp2D(
                 e.x, e.y, 
                 canvasMetrics.x, canvasMetrics.y, 
-                canvasMetrics.width, canvasMetrics.height);
+                canvasMetrics.width - 1, canvasMetrics.height - 1);
             const x = pos.x - canvasMetrics.x,
                   y = pos.y - canvasMetrics.y;
             setColorSliderPos(x, y);
@@ -173,8 +175,6 @@ window.addEventListener('mousemove', e => {
                 hueCanvasMetrics.x, hueCanvasMetrics.y, 
                 hueCanvasMetrics.width, hueCanvasMetrics.height);
             setHueSliderPos(x - hueCanvasMetrics.left);
-            const hue = (x - hueCanvasMetrics.left) / hueCanvasMetrics.width * 360;
-            drawColorPalette(hue);
             // hueSlider.style.backgroundColor = `hsl(${hue}, 100%, 50%)`;
         } else if(alphaBar) {
             const { y } = clamp2D(
@@ -190,7 +190,12 @@ window.addEventListener('mousemove', e => {
         updateNotations();
     }
 });
-window.addEventListener('mouseup', () => dragging = colorPicker = hueBar = alphaBar = false);
+window.addEventListener('mouseup', () => {
+    dragging = colorPicker = hueBar = alphaBar = false;
+    extractColor();
+    drawResultColor();
+    updateNotations();
+});
 
 colorSlider.addEventListener('mousedown', () => {
     if (!dragging) {
@@ -313,20 +318,19 @@ function hslToRgb({h, s, l, a=1}) {
 function updateHexNotation(hex) {
     hexInputNode.value = hex;
 }
-function updateRGBANotation(rgba) {
-    for(const inputNode of rgbaInputNodes) {
-        inputNode.value = truncate(rgba[inputNode.getAttribute('key')], 3);
+function updateNotation(notationNodes, values) {
+    for(const inputNode of notationNodes) {
+        inputNode.value = truncate(values[inputNode.getAttribute('key')], 3);
     }
+}
+function updateRGBANotation(rgba) {
+    updateNotation(rgbaInputNodes, rgba);
 }
 function updateHSLANotation(hsla) {
-    for(const inputNode of hslaInputNodes) {
-        inputNode.value = truncate(hsla[inputNode.getAttribute('key')], 3);
-    }
+    updateNotation(hslaInputNodes, hsla);
 }
-function updateHSVANotation(hsvl) {
-    for(const inputNode of hsvlInputNodes) {
-        inputNode.value = truncate(hsvl[inputNode.getAttribute('key')], 3);
-    }
+function updateHSVANotation(hsva) {
+    updateNotation(hsvaInputNodes, hsva);
 }
 
 function updateResult({ r, g, b, a }) {

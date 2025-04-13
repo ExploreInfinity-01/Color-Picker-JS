@@ -22,6 +22,10 @@ function copyText(string) {
       });
 }
 
+function floor(value) {
+    return Math.floor(value);
+}
+
 function truncate(value, decimal=0) {
     return Math.trunc(value * (10 ** decimal)) / 10 ** decimal;
 }
