@@ -27,7 +27,28 @@
             <div id="colorUnderlay">
                 <div id="result"></div>
             </div>
-            <div id="resultValues">
+            <div id="resultValues" class="scrollable">
+                <div id="hex" class="colorNotation">
+                    <h3 class="subHeading">Hex</h3>
+                    <label>
+                        #
+                        <input
+                            type="text"
+                            id="hexValue"
+                            name="hexValue"
+                            minlength="3"
+                            maxlength="9"
+                            pattern="^#?([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$"
+                            required
+                        />
+                    </label>
+                    <button id="copyHex" class="actionBtn">
+                        <img src="copy.svg" alt="copy">
+                    </button>
+                    <button id="editHex" class="actionBtn">
+                        <img src="edit.svg" alt="edit">
+                    </button>
+                </div>
                 <div id="rgba" class="colorNotation">
                     <h3 class="subHeading">RGBA</h3>
                     <label>

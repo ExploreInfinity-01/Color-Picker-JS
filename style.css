@@ -5,7 +5,7 @@
 }
 
 body {
-    background-color: hsl(0, 0%, 15%);
+    background-color: hsl(0, 0%, 10%);
 }
 
 main {
@@ -43,7 +43,6 @@ main {
     translate: -50% -50%;
     border: 3px solid white;
     cursor: pointer;
-    /* transition: top left 0ms; */
 }
 
 #colorPicker .slider {
@@ -60,7 +59,6 @@ main {
     translate: -50% calc(-50% - 2px);
     border-radius: 5px;
     border: 2px solid hsl(0, 0%, 70%);
-    /* background-color: hsl(0, 100%, 50%); */
 }
 
 #alphaPicker .slider {
@@ -77,6 +75,7 @@ main {
     margin: auto;
     display: grid;
     grid-template-columns: 1fr 2fr;
+    gap: 5px;
 }
 
 #colorUnderlay {
@@ -98,7 +97,27 @@ main {
 }
 
 #resultValues {
+    height: 250px;
     border: 2px solid white;
+    overflow-y: scroll;
+}
+
+.scrollable::-webkit-scrollbar {
+    width: 10px;
+}
+  
+.scrollable::-webkit-scrollbar-button {
+    height: 0;
+    display: none;
+}
+
+.scrollable::-webkit-scrollbar-thumb {
+    background-color: hsl(0, 0%, 40%);
+    border-radius: 6px;
+}
+
+.scrollable::-webkit-scrollbar-track {
+    background-color: hsl(0, 0%, 20%);
 }
 
 .colorNotation {
@@ -128,6 +147,10 @@ main {
     text-align: center;
 }
 
+.colorNotation label:nth-child(5) > input[type="number"] {
+    width: 55px;
+}
+ 
 .colorNotation input[type=number]::-webkit-outer-spin-button,
 .colorNotation input[type=number]::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -155,4 +178,19 @@ main {
 
 .actionBtn:active img {
     filter: invert(1) drop-shadow(1px 1px 1px white);
+}
+
+#hex {
+    grid-template-columns: 6fr repeat(2, 1fr);
+}
+
+#hex input[type="text"] {
+    width: 125px;
+    height: 30px;
+    margin: 0 3px;
+    background-color: transparent;
+    border: 2px solid whitesmoke;
+    color: white;
+    font-size: 17px;
+    text-align: center;
 }

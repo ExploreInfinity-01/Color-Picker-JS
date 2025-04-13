@@ -1,3 +1,14 @@
+function parseHex(string) {
+    string = string.replace(/^#/, '').trim();
+
+    const hex = string.split('').map(l => l + l).join('');
+
+    if(hex.length !== 6 && hex.length !== 8) {
+        return null;
+    }
+    return hex;
+}
+
 function parseRGBA(string) {
     const regex = /^\s*(?:rgba?\s*)?\(?\s*(\d+)\s*(?:\s+|,)\s*(\d+)\s*(?:\s+|,)\s*(\d+)\s*(?:\s*(?:\s+|,)\s*(\d*\.?\d+))?\)?\s*$/i;
     const match = string.match(regex);
