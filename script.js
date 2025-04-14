@@ -20,15 +20,15 @@ function drawColorPalette(hue) {
 
     // Horizontal Gradient (Saturation)
     const satGradient = ctx.createLinearGradient(0, 0, width, 0);
-    satGradient.addColorStop(0.001, `hsl(${hue}, 0%, 100%)`);
+    satGradient.addColorStop(0.001, `hsl(${hue}, 100%, 100%)`);
     satGradient.addColorStop(0.999, `hsl(${hue}, 100%, 50%)`);
     ctx.fillStyle = satGradient;
     ctx.fillRect(0, 0, width, height);
     
     // Vertical Gradient (Brightness)
     const brightnessGrad = ctx.createLinearGradient(0, 0, 0, height);
-    brightnessGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
-    brightnessGrad.addColorStop(0.999, `rgba(0, 0, 0, 1)`);
+    brightnessGrad.addColorStop(0, `hsla(${hue}, 100%, 50%, 0)`);
+    brightnessGrad.addColorStop(0.999, `hsla(${hue}, 100%, 0%, 1)`);
     ctx.fillStyle = brightnessGrad;
     ctx.fillRect(0, 0, width, height);
 }
@@ -89,17 +89,6 @@ function drawAlphaBar() {
 drawColorPalette(0);
 drawHueBar();
 drawAlphaBar();
-
-function toPixels(value) {
-    return `${value}px`;
-}
-
-function clamp2D(x, y, dx, dy, dw, dh) {
-    x = Math.max(dx, Math.min(x, dx + dw));
-    y = Math.max(dy, Math.min(y, dy + dh));
-    return {x, y};
-}
-
 
 let canvasMetrics = canvas.getBoundingClientRect(), 
     hueCanvasMetrics = hueCanvas.getBoundingClientRect(), 
@@ -187,14 +176,16 @@ window.addEventListener('mousemove', e => {
         }
         extractColor();
         drawResultColor();
-        updateNotations();
+        updateNotations(result);
     }
 });
 window.addEventListener('mouseup', () => {
-    dragging = colorPicker = hueBar = alphaBar = false;
-    extractColor();
-    drawResultColor();
-    updateNotations();
+    if(dragging) {
+        dragging = colorPicker = hueBar = alphaBar = false;
+        extractColor();
+        drawResultColor();
+        updateNotations(result);
+    }
 });
 
 colorSlider.addEventListener('mousedown', () => {
@@ -240,6 +231,31 @@ function rgbToHex({r, g, b, a=1}) {
     };
     return `${toHex(r)}${toHex(g)}${toHex(b)}${a < 1 ? toHex(a * 255) : ''}`;
 }
+function hsvToRgb({h, s, v, a=1}) {
+    s /= 100;
+    v /= 100;
+
+    const c = v * s;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = v - c;
+
+    const i = Math.floor(h / 60) % 6;
+    const [r1, g1, b1] = [
+        [c, x, 0],
+        [x, c, 0],
+        [0, c, x],
+        [0, x, c],
+        [x, 0, c],
+        [c, 0, x]
+    ][i];
+
+    return {
+        r: Math.round((r1 + m) * 255),
+        g: Math.round((g1 + m) * 255),
+        b: Math.round((b1 + m) * 255),
+        a
+    };
+}
 function rgbToHsv({r, g, b, a=1}) {
     r /= 255;
     g /= 255;
@@ -267,6 +283,26 @@ function rgbToHsv({r, g, b, a=1}) {
 
     return { h, s, v, a };
 }
+function hslToRgb({h, s, l, a=1}) {
+    s /= 100;
+    l /= 100;
+
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = l - c / 2;
+
+    let [r, g, b] = (h < 60) ? [c, x, 0] :
+                    (h < 120) ? [x, c, 0] :
+                    (h < 180) ? [0, c, x] :
+                    (h < 240) ? [0, x, c] :
+                    (h < 300) ? [x, 0, c] : [c, 0, x];
+
+    r = Math.round((r + m) * 255);
+    g = Math.round((g + m) * 255);
+    b = Math.round((b + m) * 255);
+
+    return { r, g, b, a };
+}
 function rgbToHsl({r, g, b, a=1}) {
     r /= 255;
     g /= 255;
@@ -293,26 +329,6 @@ function rgbToHsl({r, g, b, a=1}) {
     s = Math.round(s * 100);
     l = Math.round(l * 100);
     return { h, s, l, a };
-}
-function hslToRgb({h, s, l, a=1}) {
-    s /= 100;
-    l /= 100;
-
-    const c = (1 - Math.abs(2 * l - 1)) * s;
-    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
-    const m = l - c / 2;
-
-    let [r, g, b] = (h < 60) ? [c, x, 0] :
-                    (h < 120) ? [x, c, 0] :
-                    (h < 180) ? [0, c, x] :
-                    (h < 240) ? [0, x, c] :
-                    (h < 300) ? [x, 0, c] : [c, 0, x];
-
-    r = Math.round((r + m) * 255);
-    g = Math.round((g + m) * 255);
-    b = Math.round((b + m) * 255);
-
-    return { r, g, b, a };
 }
 
 function updateHexNotation(hex) {
@@ -342,8 +358,11 @@ function updateResult({ r, g, b, a }) {
 function updateColorPalette() {
     const hsv = rgbToHsv(result);
 
-    const sliderX = hsv.s * 0.01 * canvasMetrics.width;
-    const sliderY = (1 - hsv.v * 0.01) * canvasMetrics.height;
+    const { x: sliderX, y: sliderY } = clamp2D(
+        hsv.s * 0.01 * canvasMetrics.width, 
+        (1 - hsv.v * 0.01) * canvasMetrics.height,
+        0, 0, canvasMetrics.width - 1, canvasMetrics.height - 1
+    )
     setColorSliderPos(sliderX, sliderY);
 
     const huePos = (hsv.h / 360) * hueCanvasMetrics.width;
@@ -366,6 +385,9 @@ const rgbaInputNodes = rgbaNodeContainer.querySelectorAll('label input');
 const hslaNodeContainer = document.getElementById('hsla');
 const hslaInputNodes = hslaNodeContainer.querySelectorAll('label input');
 
+const hsvaNodeContainer = document.getElementById('hsva');
+const hsvaInputNodes = hsvaNodeContainer.querySelectorAll('label input');
+
 const hexNodeContainer = document.getElementById('hex');
 const hexInputNode = hexNodeContainer.querySelector('label input');
 
@@ -381,114 +403,95 @@ function getNotationValues(currentInputNodes) {
     return notation
 }
 
-for(const inputNode of rgbaInputNodes) {
-    inputNode.addEventListener('input', () => {
-        const rgba = getNotationValues(rgbaInputNodes);
-        const hsla = rgbToHsl(rgba);
-        const hex = rgbToHex(rgba);
-        updateHexNotation(hex);
-        updateHSLANotation(hsla);
-
-        updateAndDraw(rgba);
-    });
-} 
-
-for(const inputNode of hslaInputNodes) {
-    inputNode.addEventListener('input', () => {
-        const hsla = getNotationValues(hslaInputNodes);
-        const rgba = hslToRgb(hsla);
-        const hex = rgbToHex(rgba);
-        updateRGBANotation(rgba);
-        updateHexNotation(hex);
-
-        updateAndDraw(rgba);
-    });
-}
-
 hexInputNode.addEventListener('input', () => {
     const { value } = hexInputNode;
     hexInputNode.value = value.replace(/^#/, '');
     const rgba = hexToRgb(value);
     if(rgba) {
-        const hsla = rgbToHsl(rgba);
-        updateRGBANotation(rgba);
-        updateHSLANotation(hsla);
-
+        updateNotations(rgba);
         updateAndDraw(rgba);
     }
 });
+
+const inputEventFunctions = [
+    { nodes: rgbaInputNodes,  converter: null }, 
+    { nodes: hslaInputNodes,  converter: hslToRgb }, 
+    { nodes: hsvaInputNodes,  converter: hsvToRgb }, 
+];
+
+for(const { nodes, converter } of inputEventFunctions) {
+    for(const inputNode of nodes) {
+        inputNode.addEventListener('input', () => {
+            const notationValues = getNotationValues(nodes);
+            const rgba = converter ? converter(notationValues) : notationValues;
+            updateNotations(rgba);
+            updateAndDraw(rgba);
+        });
+    }
+}
 
 // Edit Btns
-const editRGBABtn = document.getElementById('editRGBA');
-editRGBABtn.addEventListener('click', () => {
-    const string = window.prompt('Enter your RGB/RGBA value') ?? '';
+function edit({notationType, parser, converter}) {
+    const string = window.prompt(`Enter your ${notationType} value`) ?? '';
     if(string.length > 0) {
-        const rgba = parseRGBA(string.trim());
+        const notation = parser(string.trim());
     
-        if(!rgba) {
-            return alert('Not a valid RGB/RGBA value!');
+        if(!notation) {
+            return alert(`Invalid ${notationType} value`);
         }
 
-        updateRGBANotation(rgba);
-        updateHSLANotation(rgbToHsl(rgba));
+        const rgba = converter ? converter(notation) : notation;
+        updateNotations(rgba);
         updateAndDraw(rgba);
     }
-});
-const editHSLABtn = document.getElementById('editHSLA');
-editHSLABtn.addEventListener('click', () => {
-    const string = window.prompt('Enter your HSL/HSLA value') ?? '';
-    if(string.length > 0) {
-        const hsla = parseHSLA(string.trim());
-    
-        if(!hsla) {
-            return alert('Not a valid HSL/HSLA value!');
-        }
+}
 
-        const rgba = hslToRgb(hsla);
-        updateRGBANotation(rgba)
-        updateHSLANotation(hsla);
-        updateAndDraw(rgba);
-    }
-});
 const editHexBtn = document.getElementById('editHex');
-editHexBtn.addEventListener('click', () => {
-    const string = window.prompt('Enter your Hex String') ?? '';
-    if(string.length > 0) {
-        const hex = parseHex(string.trim());
-    
-        if(!hex) {
-            return alert('Not a valid HSL/HSLA value!');
-        }
+const editRGBABtn = document.getElementById('editRGBA');
+const editHSLABtn = document.getElementById('editHSLA');
+const editHSVABtn = document.getElementById('editHSVA');
+const editBtnFunctions = [
+    {   btn: editHexBtn,  notationType: 'Hex', 
+        parser: parseHex, converter: hexToRgb
+    }, 
+    {   btn: editRGBABtn,  notationType: 'RGB/RGBA', 
+        parser: parseRGBA, converter: null
+    }, 
+    {   btn: editHSLABtn,  notationType: 'HSL/HSLA', 
+        parser: parseHSLA, converter: hslToRgb
+    }, 
+    {   btn: editHSVABtn,  notationType: 'HSV/HSVA', 
+        parser: parseHSVA, converter: hsvToRgb
+    }, 
+];
 
-        const rgba = hexToRgb(hex);
-        const hsla = rgbToHsl(rgba);
-        updateHexNotation(hex)
-        updateRGBANotation(rgba)
-        updateHSLANotation(hsla);
-        updateAndDraw(rgba);
-    }
-});
+for(const parameters of editBtnFunctions) {
+    parameters.btn.addEventListener('click', () => edit(parameters));
+}
 
 // Copy Btn
+const copyHex = document.getElementById('copyHex');
 const copyRGBA = document.getElementById('copyRGBA');
 const copyHSLA = document.getElementById('copyHSLA');
-const copyHex = document.getElementById('copyHex');
+const copyHSVA = document.getElementById('copyHSVA');
 
+copyHex.addEventListener('click', () => copyText(hex(hexInputNode.value)));
 copyRGBA.addEventListener('click', () => copyText(rgba(getNotationValues(rgbaInputNodes))));
 copyHSLA.addEventListener('click', () => copyText(hsla(getNotationValues(hslaInputNodes))));
-copyHex.addEventListener('click', () => copyText(hex(hexInputNode.value)));
+copyHSVA.addEventListener('click', () => copyText(hsva(getNotationValues(hsvaInputNodes))));
 
 // Update All Notations
 const notations = {
+    hex: { nodes: [hexInputNode], conversion: rgbToHex, update: updateHexNotation }, 
     rgba: { nodes: rgbaInputNodes, update: updateRGBANotation }, 
     hsla: { nodes: hslaInputNodes, conversion: rgbToHsl, update: updateHSLANotation }, 
-    hex: { nodes: [hexInputNode], conversion: rgbToHex, update: updateHexNotation }, 
+    hsva: { nodes: hsvaInputNodes, conversion: rgbToHsv, update: updateHSVANotation }, 
 };
 
-function updateNotations() {
+function updateNotations(rgba) {
     for(const { conversion, update }  of Object.values(notations)) {
-        const values = conversion ? conversion(result) : result;
+        const values = conversion ? conversion(rgba) : rgba;
         update(values); 
     }
 }
-updateNotations();
+updateNotations(result);

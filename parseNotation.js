@@ -24,8 +24,10 @@ function parseRGBA(string) {
 }
 
 function parseHSLA(string) {
-    const regex = /^\s*(?:hsla\s*)?\(?\s*(\d+)\s*(?:\s+|,)\s*(\d+)(%)?\s*(?:\s+|,)\s*(\d+)(%)?\s*(?:\s*(?:\s+|,)\s*(\d*\.?\d+))?\)?\s*$/i;
+    const regex = /^\s*(?:hsl[a]?\s*)?\(?\s*(\d+)\s*(?:,|\s)\s*(\d+)\s*(%)?\s*(?:,|\s)\s*(\d+)\s*(%)?\s*(?:,|\s)*(\d*\.?\d+)?\s*\)?\s*$/i;
     const match = string.match(regex);
+
+    console.log(match)
   
     if (!match) return null;
   
@@ -33,6 +35,20 @@ function parseHSLA(string) {
         h: Math.abs(parseInt(match[1], 10)) % 360, 
         s: clamp(parseInt(match[2], 10), 0, 100), 
         l: clamp(parseInt(match[4], 10), 0, 100), 
+        a: clamp(parseFloat(match[6] ?? 1), 0, 1)
+    }
+}
+
+function parseHSVA(string) {
+    const regex = /^\s*(?:hsv[a]?\s*)?\(?\s*(\d+)\s*(?:,|\s)\s*(\d+)\s*(%)?\s*(?:,|\s)\s*(\d+)\s*(%)?\s*(?:,|\s)*(\d*\.?\d+)?\s*\)?\s*$/i;
+    const match = string.match(regex);
+  
+    if (!match) return null;
+  
+    return {
+        h: Math.abs(parseInt(match[1], 10)) % 360,
+        s: clamp(parseInt(match[2], 10), 0, 100),
+        v: clamp(parseInt(match[4], 10), 0, 100),
         a: clamp(parseFloat(match[6] ?? 1), 0, 1)
     }
 }

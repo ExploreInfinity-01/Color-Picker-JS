@@ -2,6 +2,16 @@ function clamp(value, min, max) {
     return Math.max(min, Math.min(value, max));
 }
 
+function clamp2D(x, y, dx, dy, dw, dh) {
+    x = Math.max(dx, Math.min(x, dx + dw));
+    y = Math.max(dy, Math.min(y, dy + dh));
+    return {x, y};
+}
+
+function toPixels(value) {
+    return `${value}px`;
+}
+
 function hex(hexValue) {
     return '#' + hexValue;
 }
@@ -11,7 +21,11 @@ function rgba({r, g, b, a=1}) {
 }
 
 function hsla({h, s, l, a=1}) {
-    return a === 1 ? `hsl(${h}, ${s}, ${l})` : `hsla(${h}, ${s}, ${l}, ${a})`;
+    return a === 1 ? `hsl(${h}, ${s}%, ${l}%)` : `hsla(${h}, ${s}%, ${l}%, ${a})`;
+}
+
+function hsva({h, s, v, a=1}) {
+    return a === 1 ? `hsv(${h}, ${s}%, ${v}%)` : `hsva(${h}, ${s}%, ${v}%, ${a})`;
 }
 
 function copyText(string) {
