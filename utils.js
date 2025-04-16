@@ -3,8 +3,8 @@ function clamp(value, min, max) {
 }
 
 function clamp2D(x, y, dx, dy, dw, dh) {
-    x = Math.max(dx, Math.min(x, dx + dw));
-    y = Math.max(dy, Math.min(y, dy + dh));
+    x = clamp(x, dx, dx + dw);
+    y = clamp(y, dy, dy + dh);
     return {x, y};
 }
 

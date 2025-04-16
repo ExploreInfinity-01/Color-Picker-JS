@@ -18,18 +18,22 @@ const result = { r: 255, g: 0, b: 0, a: 1 };
 function drawColorPalette(hue) {
     const { width, height } = canvas;
 
-    // Horizontal Gradient (Saturation)
-    const satGradient = ctx.createLinearGradient(0, 0, width, 0);
-    satGradient.addColorStop(0.001, `hsl(${hue}, 100%, 100%)`);
-    satGradient.addColorStop(0.999, `hsl(${hue}, 100%, 50%)`);
-    ctx.fillStyle = satGradient;
+    // Fill base with hue
+    ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
     ctx.fillRect(0, 0, width, height);
-    
-    // Vertical Gradient (Brightness)
-    const brightnessGrad = ctx.createLinearGradient(0, 0, 0, height);
-    brightnessGrad.addColorStop(0, `hsla(${hue}, 100%, 50%, 0)`);
-    brightnessGrad.addColorStop(0.999, `hsla(${hue}, 100%, 0%, 1)`);
-    ctx.fillStyle = brightnessGrad;
+  
+    // Overlay white (saturation)
+    const whiteGrad = ctx.createLinearGradient(0, 0, width, 0);
+    whiteGrad.addColorStop(0.001, 'rgba(255,255,255,1)');
+    whiteGrad.addColorStop(0.999, 'rgba(255,255,255,0)');
+    ctx.fillStyle = whiteGrad;
+    ctx.fillRect(0, 0, width, height);
+  
+    // Overlay black (value/brightness)
+    const blackGrad = ctx.createLinearGradient(0, 0, 0, height);
+    blackGrad.addColorStop(0.001, 'rgba(0,0,0,0)');
+    blackGrad.addColorStop(0.999, 'rgba(0,0,0,1)');
+    ctx.fillStyle = blackGrad;
     ctx.fillRect(0, 0, width, height);
 }
 
